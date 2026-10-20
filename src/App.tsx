@@ -1,9 +1,61 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Peer from 'peerjs'
 import { QRCodeSVG } from 'qrcode.react'
 
 function Smartphone({ hostId }: { hostId: string }) {
-  return <div>接続先PC：{hostId}</div>
+  const videoRef = useRef<HTMLVideoElement>(null)
+  useEffect(() => {
+    let stream: MediaStream | null = null
+    const peer = new Peer()
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+          audio: false,
+        })
+
+        if (peer.destroyed) {
+          stream.getTracks().forEach((track) => track.stop())
+          return
+        }
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+        }
+
+      } catch (error) {
+        console.error('カメラの取得に失敗しました', error)
+      }
+    }
+    startCamera()
+
+    return () => {
+      stream?.getTracks().forEach((track) => track.stop())
+      stream = null
+      peer.destroy()
+    }
+  }, [hostId])
+  return (
+    <div className="h-dvh overflow-hidden bg-blue-100 p-4">
+      <div className="flex flex-row items-center gap-4">
+        <h1 className="mb-4 text-sm font-bold">
+          スマホカメラ
+        </h1>
+        <p className="mb-4 break-all">
+          接続先PC：{hostId}
+        </p>
+      </div>
+
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className="w-full rounded bg-black"
+      />
+    </div>
+  )
 }
 
 function App() {
