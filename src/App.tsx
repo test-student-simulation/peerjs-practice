@@ -7,7 +7,6 @@ function Smartphone({ hostId }: { hostId: string }) {
   useEffect(() => {
     let stream: MediaStream | null = null
     const peer = new Peer()
-
     function tryCall() {
       if (peer.open && stream) {
         peer.call(hostId, stream)
@@ -47,6 +46,7 @@ function Smartphone({ hostId }: { hostId: string }) {
       peer.destroy()
     }
   }, [hostId])
+
   return (
     <div className="h-dvh overflow-hidden bg-blue-100 p-4">
       <div className="flex flex-row items-center gap-4">
@@ -73,10 +73,9 @@ function VideoPanel({ stream }: { stream: MediaStream }) {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
-    const video = videoRef.current
-    if (video) {
-      video.srcObject = stream
-      video.play().catch((err) => console.error('再生エラー:', err))
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream
+      videoRef.current.play().catch((err) => console.error('再生エラー:', err))
     }
   }, [stream])
 
@@ -87,7 +86,7 @@ function VideoPanel({ stream }: { stream: MediaStream }) {
         autoPlay
         playsInline
         muted
-        className="w-full h-auto min-h-[200px] rounded bg-black object-cover"
+        className="w-full rounded bg-black"
       />
     </div>
   )
@@ -99,6 +98,7 @@ function App() {
     { peerId: string; stream: MediaStream }[]
   >([])
   const smartphoneUrl = `${window.location.origin}${import.meta.env.BASE_URL}?host=${peerId}`
+
   useEffect(() => {
     const peer = new Peer()
 
@@ -118,7 +118,6 @@ function App() {
       peer.destroy()
     }
   }, [])
-
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <h1 className="mb-4 text-2xl font-bold">
@@ -128,6 +127,7 @@ function App() {
       <p>PCのPeer ID：<span className="mt-2 break-all rounded bg-white p-4">
         {peerId || '接続待機中...'}
       </span></p>
+
       {peerId && (
         <div className="flex flex-row items-center gap-4">
           <div className="mt-6 inline-block rounded bg-white p-4">
@@ -154,6 +154,7 @@ function App() {
           />
         ))}
       </div>
+
     </div>
   )
 }
