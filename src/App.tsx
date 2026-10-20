@@ -73,8 +73,10 @@ function VideoPanel({ stream }: { stream: MediaStream }) {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream
+    const video = videoRef.current
+    if (video) {
+      video.srcObject = stream
+      video.play().catch((err) => console.error('再生エラー:', err))
     }
   }, [stream])
 
@@ -85,7 +87,7 @@ function VideoPanel({ stream }: { stream: MediaStream }) {
         autoPlay
         playsInline
         muted
-        className="w-full rounded bg-black"
+        className="w-full h-auto min-h-[200px] rounded bg-black object-cover"
       />
     </div>
   )
