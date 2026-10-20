@@ -8,6 +8,16 @@ function Smartphone({ hostId }: { hostId: string }) {
     let stream: MediaStream | null = null
     const peer = new Peer()
 
+    function tryCall() {
+      if (peer.open && stream) {
+        peer.call(hostId, stream)
+      }
+    }
+
+    peer.on('open', () => {
+      tryCall()
+    })
+
     async function startCamera() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -23,6 +33,7 @@ function Smartphone({ hostId }: { hostId: string }) {
         if (videoRef.current) {
           videoRef.current.srcObject = stream
         }
+        tryCall()
 
       } catch (error) {
         console.error('カメラの取得に失敗しました', error)
@@ -58,14 +69,47 @@ function Smartphone({ hostId }: { hostId: string }) {
   )
 }
 
+function VideoPanel({ stream }: { stream: MediaStream }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream
+    }
+  }, [stream])
+
+  return (
+    <div className="relative [container-type:inline-size]">
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className="w-full rounded bg-black"
+      />
+    </div>
+  )
+}
+
 function App() {
   const [peerId, setPeerId] = useState('')
+  const [videos, setVideos] = useState<
+    { peerId: string; stream: MediaStream }[]
+  >([])
   const smartphoneUrl = `${window.location.origin}${import.meta.env.BASE_URL}?host=${peerId}`
   useEffect(() => {
     const peer = new Peer()
 
     peer.on('open', (id) => {
       setPeerId(id)
+    })
+
+    peer.on('call', (call) => {
+      call.answer()
+
+      call.on('stream', (stream) => {
+        setVideos((prev) => [...prev, { peerId: call.peer, stream }])
+      })
     })
 
     return () => {
@@ -99,6 +143,15 @@ function App() {
           </div>
         </div>
       )}
+
+      <div className="grid grid-cols-6 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {videos.map((video) => (
+          <VideoPanel
+            key={video.stream.id}
+            stream={video.stream}
+          />
+        ))}
+      </div>
     </div>
   )
 }
