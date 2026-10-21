@@ -109,9 +109,33 @@ function App() {
     peer.on('call', (call) => {
       call.answer()
 
+      let streamId: string | null = null
+
+      function removeVideo() {
+        if (streamId) {
+          setVideos((prev) =>
+            prev.filter((video) => video.stream.id !== streamId)
+          )
+        }
+      }
+
       call.on('stream', (stream) => {
+        streamId = stream.id
         setVideos((prev) => [...prev, { peerId: call.peer, stream }])
+        const connection = call.peerConnection
+        connection.addEventListener('connectionstatechange', () => {
+          console.log(connection.connectionState)
+          if (
+            connection.connectionState === 'failed' ||
+            connection.connectionState === 'closed'
+          ) {
+            removeVideo()
+          }
+        })
       })
+
+      call.on('close', removeVideo)
+
     })
 
     return () => {
@@ -143,6 +167,9 @@ function App() {
               />
             </a>
           </div>
+          <h2 className="mt-8 mb-4 text-xl font-bold">
+            接続中のスマホ：{videos.length}台
+          </h2>
         </div>
       )}
 
